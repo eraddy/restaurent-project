@@ -3,6 +3,7 @@ package com.epam.edai.run8.team11.dto.reservatation;
 import com.epam.edai.run8.team11.exception.InvalidInputException;
 import com.epam.edai.run8.team11.exception.location.LocationException;
 import com.epam.edai.run8.team11.exception.table.TableException;
+import com.epam.edai.run8.team11.model.reservation.Reservation;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -67,5 +68,15 @@ public class UpdateReservationRequest {
         if (!parsedEndTime.isAfter(parsedStartTime)) {
             throw new IllegalArgumentException("End time must be after start time.");
         }
+    }
+
+    public void populateWithDefaultValues(Reservation reservation){
+        String[] timeSlotArr = reservation.getTimeSlot().replaceAll(" ","").split("-");
+        locationId = locationId == null ? reservation.getLocationId() : locationId;
+        timeFrom = timeFrom == null ? timeSlotArr[0] : timeFrom;
+        timeTo = timeTo == null ? timeSlotArr[1] : timeTo;
+        guestsNumber = guestsNumber == null ? Integer.valueOf(reservation.getGuestsNumber()) : guestsNumber;
+        tableNumber = tableNumber == null ? Integer.toString(reservation.getTableNumber()) : tableNumber;
+        date = date == null ? reservation.getDate() : date;
     }
 }

@@ -31,10 +31,10 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
-                        requests ->
-                                requests
-                                        .requestMatchers("/v1/auth/**", "/v1/locations/**", "/v1/bookings/tables/**", "/v1/feedbacks/visitor").permitAll()
-                                        .anyRequest().authenticated()
+        requests ->
+                    requests
+                            .requestMatchers("/v1/auth/**", "/v1/locations/**", "/v1/bookings/tables/**", "/v1/feedbacks/visitor", "/v1/dishes/**").permitAll()
+                                    .anyRequest().authenticated()
                 ).addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

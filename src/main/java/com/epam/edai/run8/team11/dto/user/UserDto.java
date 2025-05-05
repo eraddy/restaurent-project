@@ -28,4 +28,8 @@ public class UserDto {
                 ", userId='" + userId + '\'' +
                 '}';
     }
+
+    public String getFullName(){
+        return String.format("%s %s", firstName, lastName);
+    }
 }

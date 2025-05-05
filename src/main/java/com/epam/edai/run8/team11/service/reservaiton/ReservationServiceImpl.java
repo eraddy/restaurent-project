@@ -95,8 +95,9 @@ public class ReservationServiceImpl implements ReservationService{
 
     @Override
     public void updateReservation(Reservation reservation) {
-        log.info("Updating reservation item");
-        Optional<UserDto> authenticatedUser = authenticationUtil.getAuthenticatedUser();
+        log.info("Updating reservation item: {}", reservation);
+        authenticationUtil.getAuthenticatedUser()
+                .orElseThrow(UserNotLoggedInException::new);
         reservationRepository.updateReservation(reservation);
     }
 
@@ -104,14 +105,18 @@ public class ReservationServiceImpl implements ReservationService{
     public ReservationResponse updateReservation(String reservationId, UpdateReservationRequest updateReservationRequest) {
         log.info("Updating reservation with ID: {}", reservationId);
 
+        // Fetch the existing reservation
+        log.debug("Fetching existing reservation with ID: {}", reservationId);
+        Reservation existingReservation = findById(reservationId);
+
+
         // Validate the update request
+        updateReservationRequest.populateWithDefaultValues(existingReservation);
         updateReservationRequest.validate();
-        Optional<UserDto> authenticatedUser = authenticationUtil.getAuthenticatedUser();
-        if(authenticatedUser.isEmpty())
-        {
-            throw new UserNotLoggedInException("User is not logged in");
-        }
-        UserDto userDto = authenticatedUser.get();
+
+        UserDto userDto = authenticationUtil.getAuthenticatedUser()
+                .orElseThrow(UserNotLoggedInException::new);
+
         // Extract details from the request
         String locationId = updateReservationRequest.getLocationId();
         Integer tableNumber = Integer.valueOf(updateReservationRequest.getTableNumber());
@@ -122,10 +127,6 @@ public class ReservationServiceImpl implements ReservationService{
 
         String updatingUserId = userDto.getUserId();
         String role = userDto.getRole().toString();
-
-        // Fetch the existing reservation
-        log.debug("Fetching existing reservation with ID: {}", reservationId);
-        Reservation existingReservation = findById(reservationId);
 
         // Check if the reservation is already cancelled
         if (ReservationStatus.CANCELLED.equals(existingReservation.getStatus())) {
@@ -275,6 +276,9 @@ public class ReservationServiceImpl implements ReservationService{
                 .status(ReservationStatus.CONFIRMED)
                 .waiterName(newWaiter.getFirstName())
                 .waiterId(newWaiter.getUserId())
+                .customerId(existingReservation.getCustomerId())
+                .customerName(existingReservation.getCustomerName())
+                .clientType(existingReservation.getClientType())
                 .date(existingReservation.getDate())
                 .locationId(existingReservation.getLocationId())
                 .locationAddress(locationService.findLocationById(existingReservation.getLocationId()).getAddress())

@@ -17,6 +17,7 @@ import com.epam.edai.run8.team11.model.reservation.reservationstatus.Reservation
 import com.epam.edai.run8.team11.service.location.LocationService;
 import com.epam.edai.run8.team11.service.reservaiton.ReservationService;
 import com.epam.edai.run8.team11.service.table.TableService;
+import com.epam.edai.run8.team11.service.user.UserService;
 import com.epam.edai.run8.team11.service.waiter.WaiterService;
 import com.epam.edai.run8.team11.utils.AuthenticationUtil;
 import lombok.RequiredArgsConstructor;
@@ -42,16 +43,13 @@ public class BookingServiceImpl implements BookingService {
         log.debug("Processing booking request: {}", reservationRequestByClient);
 
         reservationRequestByClient.validate();
-        Optional<UserDto> authenticatedUser = authenticationUtil.getAuthenticatedUser();
-        if (authenticatedUser.isEmpty())
-        {
-            throw new UserNotLoggedInException("You are not logged in");
+        UserDto userDto = authenticationUtil.getAuthenticatedUser()
+                .orElseThrow(UserNotLoggedInException::new);
+
+        if(!userDto.getRole().equals(Role.CUSTOMER)) {
+            throw new InvalidAccessException("You don't have access to perform this action");
         }
-        UserDto userDto = authenticatedUser.get();
-        if(!userDto.getRole().equals(Role.CUSTOMER))
-        {
-            throw new InvalidAccessException("You don't access to perform this action");
-        }
+
         String locationId = reservationRequestByClient.getLocationId();
         Integer tableNumber = Integer.valueOf(reservationRequestByClient.getTableNumber());
         LocalDate date = LocalDate.parse(reservationRequestByClient.getDate());
@@ -83,7 +81,9 @@ public class BookingServiceImpl implements BookingService {
                 .locationId(locationId)
                 .locationAddress(locationService.findLocationById(locationId).getAddress())
                 .waiterId(waiter.getUserId())
+                .customerName(userDto.getFullName())
                 .customerId(userDto.getUserId())
+                .clientType(ClientType.CUSTOMER)
                 .waiterName(waiter.getFirstName())
                 .timeSlot(timeFrom+" - "+timeTo)
                 .status(ReservationStatus.CONFIRMED)
@@ -111,6 +111,9 @@ public class BookingServiceImpl implements BookingService {
                 .status(ReservationStatus.CONFIRMED)
                 .waiterName(waiter.getFirstName())
                 .waiterId(waiter.getUserId())
+                .customerId(userDto.getUserId())
+                .customerName(userDto.getFullName())
+                .clientType(ClientType.CUSTOMER)
                 .date(date.toString())
                 .locationId(locationId)
                 .locationAddress(reservation.getLocationAddress())
@@ -122,7 +125,9 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public ReservationResponse bookingByWaiter(ReservationRequestByWaiter reservationRequestByWaiter) {
+
         reservationRequestByWaiter.validate();
+
         String locationId = reservationRequestByWaiter.getLocationId();
         Integer tableNumber = Integer.valueOf(reservationRequestByWaiter.getTableNumber());
         LocalDate date = LocalDate.parse(reservationRequestByWaiter.getDate());
@@ -132,14 +137,11 @@ public class BookingServiceImpl implements BookingService {
         String customerName = reservationRequestByWaiter.getCustomerName();
         String customerId = reservationRequestByWaiter.getCustomerId();
         ClientType clientType = ClientType.fromValue(reservationRequestByWaiter.getClientType());
-        Optional<UserDto> authenticatedUser = authenticationUtil.getAuthenticatedUser();
-        if(authenticatedUser.isEmpty())
-        {
-            throw new UserNotLoggedInException("Login to access this service");
-        }
-        UserDto userDto = authenticatedUser.get();
-        if(!userDto.getRole().equals(Role.WAITER))
-        {
+
+        UserDto userDto = authenticationUtil.getAuthenticatedUser()
+                .orElseThrow(UserNotLoggedInException::new);
+
+        if(!userDto.getRole().equals(Role.WAITER)) {
             throw new InvalidAccessException("You have no access to perform this action");
         }
         String waiterId = userDto.getUserId();
@@ -175,9 +177,9 @@ public class BookingServiceImpl implements BookingService {
                 .locationAddress(locationService.findLocationById(locationId).getAddress())
                 .waiterId(waiter.getUserId())
                 .waiterName(waiter.getFirstName())
-                .customerName(customerName) // Additional field for waiter request
-                .clientType(clientType) // Additional field for waiter request
                 .customerId(customerId)
+                .customerName(customerName)
+                .clientType(clientType)
                 .timeSlot(timeFrom+" - "+timeTo)
                 .status(ReservationStatus.IN_PROGRESS)
                 .build();
@@ -204,6 +206,9 @@ public class BookingServiceImpl implements BookingService {
                 .status(ReservationStatus.IN_PROGRESS)
                 .waiterName(waiter.getFirstName())
                 .waiterId(waiter.getUserId())
+                .customerId(customerId)
+                .customerName(customerName)
+                .clientType(clientType)
                 .date(date.toString())
                 .locationId(locationId)
                 .locationAddress(reservation.getLocationAddress())

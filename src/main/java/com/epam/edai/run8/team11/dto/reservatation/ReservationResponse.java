@@ -1,5 +1,6 @@
 package com.epam.edai.run8.team11.dto.reservatation;
 
+import com.epam.edai.run8.team11.model.reservation.clienttype.ClientType;
 import com.epam.edai.run8.team11.model.reservation.reservationstatus.ReservationStatus;
 import lombok.*;
 
@@ -18,4 +19,7 @@ public class ReservationResponse {
     private String waiterId;        // Assigned waiter ID
     private String waiterName;      // Assigned waiter name
     private String locationAddress; // Address of the location
+    private String customerId;
+    private String customerName;
+    private ClientType clientType;
 }

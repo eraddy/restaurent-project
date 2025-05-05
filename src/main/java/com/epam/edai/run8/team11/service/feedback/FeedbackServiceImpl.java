@@ -19,6 +19,7 @@ import com.epam.edai.run8.team11.model.reservation.Reservation;
 import com.epam.edai.run8.team11.model.reservation.reservationstatus.ReservationStatus;
 import com.epam.edai.run8.team11.repository.feedback.FeedbackRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FeedbackServiceImpl implements FeedbackService{
@@ -111,17 +113,22 @@ public class FeedbackServiceImpl implements FeedbackService{
     }
 
     public void save(NewFeedbackDTO newFeedbackDTO) {
+        log.info("Getting authenticated user");
         authenticationUtil.getAuthenticatedUser()
                 .orElseThrow(UserNotLoggedInException::new);
 
+        log.info("Validating request body");
         validateNewFeedbackDTO(newFeedbackDTO);
 
         Reservation reservation = reservationService.findById(newFeedbackDTO.getReservationId());
-         UserDto user = userService.getUserByUserId(reservation.getCustomerId())
+        log.info("Retrieved reservation from reservationId: {}", reservation);
+
+        UserDto user = userService.getUserByUserId(reservation.getCustomerId())
                 .getData().orElseThrow(() -> new UserNotFoundException(reservation.getCustomerId()));
 
+        log.info("Retrieved user from userId: {}", user);
         if(!reservation.getStatus().equals(ReservationStatus.IN_PROGRESS))
-            throw new InvalidReservationStateException(ReservationStatus.IN_PROGRESS.getValue());
+            throw new InvalidReservationStateException(reservation.getStatus().getValue());
 
         //Cuisine Feedback
         Feedback cuisineFeedback = Feedback.builder()
@@ -152,6 +159,7 @@ public class FeedbackServiceImpl implements FeedbackService{
 
         reservation.setFeedbackId(feedbackIds);
         reservationService.updateReservation(reservation);
+
     }
 
     public Feedback findById(String feedbackId) {

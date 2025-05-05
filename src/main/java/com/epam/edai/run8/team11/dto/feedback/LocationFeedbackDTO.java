@@ -15,6 +15,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class LocationFeedbackDTO {
     private String id;
+    private String locationId;
     private FeedbackType type;
     private Double rating;
     private String comment;
