@@ -10,3 +10,11 @@ logging:
           run8:
             team11: DEBUG
 
+aws:
+  region: eu-west-2
+  dynamo:
+    accessKey: ${AWS_ACCESS_KEY_ID}
+    secretKey: ${AWS_SECRET_ACCESS_KEY}
+    sessionToken: ${AWS_SESSION_TOKEN}
+    roleArn: arn:aws:iam::089718700404:role/org/DeveloperAccessRoleTeam2
+
