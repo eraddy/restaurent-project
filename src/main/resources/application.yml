@@ -1,0 +1,12 @@
+logging:
+  level:
+    root: INFO
+    org:
+      springframework:
+        web: DEBUG
+    com:
+      epam:
+        edai:
+          run8:
+            team11: DEBUG
+
