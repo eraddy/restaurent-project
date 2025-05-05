@@ -18,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -26,14 +27,17 @@ public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
 
+    private final CorsConfigurationSource corsConfigurationSource;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         return http
                 .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .authorizeHttpRequests(
         requests ->
                     requests
-                            .requestMatchers("/v1/auth/**", "/v1/locations/**", "/v1/bookings/tables/**", "/v1/feedbacks/visitor", "/v1/dishes/**").permitAll()
+                            .requestMatchers("/v1/auth/**", "/v1/locations/**", "/v1/bookings/tables/**", "/v1/feedbacks/visitor").permitAll()
                                     .anyRequest().authenticated()
                 ).addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
