@@ -19,9 +19,9 @@ spec:
       {{- end }}
       labels:
         {{- include "restaurant-api.labels" . | nindent 8 }}
-        {{- with .Values.podLabels }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+          {{- with .Values.podLabels }}
+          {{- toYaml . | nindent 8 }}
+          {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -47,10 +47,10 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
-            {{ - with .Values.env.extraEnv }}
-              {{ - toYaml . | nindent 12 }}
-            {{ - end }}
-            {{- with .Values.volumeMounts }}
+            {{- with .Values.env.extraEnv }}
+              {{- toYaml . | nindent 12 }}
+              {{- end }}
+              {{- with .Values.volumeMounts }}
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
