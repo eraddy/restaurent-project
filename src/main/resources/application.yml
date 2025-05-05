@@ -18,3 +18,5 @@ aws:
     sessionToken: ${AWS_SESSION_TOKEN}
     roleArn: arn:aws:iam::089718700404:role/org/DeveloperAccessRoleTeam2
 
+jwt:
+  secret: ${JWT_SECRET}

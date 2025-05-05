@@ -128,3 +128,9 @@ env:
         secretKeyRef:
           name: run8team11-secret
           key: aws-session-token
+
+    - name: JWT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: run8team11-secret
+          key: jwt-secret
