@@ -44,6 +44,7 @@ public class AuthenticationUtil {
 
             log.debug("Retrieving authenticated user with email: {}", email);
 
+
             log.info("Fetching waiter table");
             Optional<Waiter> waiterOptional = waiterRepository.findByEmail(email);
             if(waiterOptional.isPresent()){
