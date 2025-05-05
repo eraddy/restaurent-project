@@ -1,6 +1,12 @@
 target/
 !.mvn/wrapper/maven-wrapper.jar
 
+/script.py
+/.idea/
+merged_output.java
+/target/
+InsideChangesController.java
+
 ### STS ###
 .apt_generated
 .classpath

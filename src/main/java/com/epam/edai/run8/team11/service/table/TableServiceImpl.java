@@ -2,6 +2,7 @@ package com.epam.edai.run8.team11.service.table;
 
 import com.epam.edai.run8.team11.exception.location.LocationNotFoundException;
 import com.epam.edai.run8.team11.exception.table.SlotAlreadyBookedException;
+import com.epam.edai.run8.team11.exception.table.TableNotFoundException;
 import com.epam.edai.run8.team11.model.Table;
 import com.epam.edai.run8.team11.repository.table.TableRepository;
 import com.epam.edai.run8.team11.service.location.LocationService;
@@ -124,9 +125,12 @@ public class TableServiceImpl implements TableService{
     }
 
     @Override
-    public Table findFyIdAndNumber(String locationId, Integer tableNumber) {
+    public Table findByIdAndNumber(String locationId, Integer tableNumber) {
         List<Table> tables = findById(locationId);
-        return tables.stream().filter(table -> table.getTableNumber().equals(tableNumber)).findAny().get();
+        return tables.stream()
+                .filter(table -> table.getTableNumber().equals(tableNumber))
+                .findAny()
+                .orElseThrow(() -> new TableNotFoundException(tableNumber));
     }
 
     @Override

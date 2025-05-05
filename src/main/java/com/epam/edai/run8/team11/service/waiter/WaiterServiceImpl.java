@@ -1,10 +1,11 @@
 package com.epam.edai.run8.team11.service.waiter;
 
+import com.epam.edai.run8.team11.exception.user.UserNotLoggedInException;
 import com.epam.edai.run8.team11.exception.waiter.WaiterNotFoundException;
 import com.epam.edai.run8.team11.model.user.Waiter;
 import com.epam.edai.run8.team11.repository.waiter.WaiterRepository;
+import com.epam.edai.run8.team11.utils.AuthenticationUtil;
 import com.epam.edai.run8.team11.utils.SlotUtil;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,12 +17,13 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class WaiterServiceImpl implements WaiterService {
 
     @Autowired
-    private final WaiterRepository waiterRepository;
+    private WaiterRepository waiterRepository;
+    @Autowired
+    private AuthenticationUtil authenticationUtil;
 
     @Override
     public Waiter getLeastBusyWaiterAtLocation(String locationId, LocalDate date, String startTime) {
@@ -76,7 +78,20 @@ public class WaiterServiceImpl implements WaiterService {
 
     @Override
     public Waiter findWaiterById(String id) {
-        return waiterRepository.findByID(id);
+        return waiterRepository.findById(id)
+                .orElseThrow(() -> new WaiterNotFoundException(id));
+    }
+
+    @Override
+    public Waiter findWaiterByEmail(String email) {
+        return waiterRepository.findByEmail(email).orElseThrow(() -> new WaiterNotFoundException(email));
+    }
+
+    @Override
+    public List<String> findAvailableSlots(LocalDate date) {
+        String id = authenticationUtil.getAuthenticatedUser()
+                .orElseThrow(UserNotLoggedInException::new).getUserId();
+        return findWaiterById(id).getSlots().getOrDefault(date.toString(), SlotUtil.getDefaultSlots());
     }
 
     @Override

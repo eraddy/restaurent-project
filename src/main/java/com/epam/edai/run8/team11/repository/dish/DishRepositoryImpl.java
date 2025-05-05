@@ -35,6 +35,13 @@ public class DishRepositoryImpl implements DishRepository {
     }
 
     @Override
+    public List<Dish> findPopularDishes() {
+        return findAll().stream()
+                .filter(Dish::getIsPopular)
+                .toList();
+    }
+
+    @Override
     public List<Dish> findDishesByLocationId(String locationId) {
         return findAll().stream()
                 .filter(dish -> dish.getLocationId().equals(locationId))
@@ -47,6 +54,8 @@ public class DishRepositoryImpl implements DishRepository {
                 .filter(Dish::getIsSpeciality)
                 .toList();
     }
+
+
 
     public void deleteById(String dishId) {
         dishTable.deleteItem(r -> r.key(k -> k.partitionValue(dishId)));

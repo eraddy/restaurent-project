@@ -2,10 +2,15 @@ package com.epam.edai.run8.team11.utils;
 
 import com.epam.edai.run8.team11.dto.ServiceBodyDto;
 import com.epam.edai.run8.team11.dto.user.UserDto;
+import com.epam.edai.run8.team11.dto.user.WaiterUserDtoMapper;
+import com.epam.edai.run8.team11.model.user.Waiter;
+import com.epam.edai.run8.team11.repository.waiter.WaiterRepository;
 import com.epam.edai.run8.team11.service.auth.DynamoDbUserPrincipal;
 import com.epam.edai.run8.team11.service.user.UserService;
+import com.epam.edai.run8.team11.service.waiter.WaiterService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -13,11 +18,15 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 @Component
-@AllArgsConstructor
 @Slf4j
 public class AuthenticationUtil {
 
-    private final UserService userService;
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private WaiterRepository waiterRepository;
+    @Autowired
+    private WaiterUserDtoMapper waiterUserDtoMapper;
 
     /**
      * Gets the authenticated user's details from the security context.
@@ -35,6 +44,13 @@ public class AuthenticationUtil {
 
             log.debug("Retrieving authenticated user with email: {}", email);
 
+            log.info("Fetching waiter table");
+            Optional<Waiter> waiterOptional = waiterRepository.findByEmail(email);
+            if(waiterOptional.isPresent()){
+                return Optional.ofNullable(waiterUserDtoMapper.apply(waiterOptional.get()));
+            }
+
+            log.info("Fetching user table");
             ServiceBodyDto<Optional<UserDto>> userResult = userService.getUserByPartitionKey(email);
 
             if (userResult.isSuccess()) {

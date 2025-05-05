@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface DishService {
-    Optional<Dish> findById(String dishId);
+    Dish findById(String dishId);
     List<Dish> findAll();
+    List<Dish> findPopularDishes();
     List<Dish> findSpecialityDishesByLocationId(String locationId);
 }

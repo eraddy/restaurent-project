@@ -2,6 +2,8 @@ package com.epam.edai.run8.team11.service.reservaiton;
 
 import com.epam.edai.run8.team11.dto.reservatation.ReservationResponse;
 import com.epam.edai.run8.team11.dto.reservatation.UpdateReservationRequest;
+import com.epam.edai.run8.team11.dto.sqs.EventPayloadDTO;
+import com.epam.edai.run8.team11.dto.sqs.eventtype.EventType;
 import com.epam.edai.run8.team11.dto.user.UserDto;
 import com.epam.edai.run8.team11.exception.access.InvalidAccessException;
 import com.epam.edai.run8.team11.exception.reservation.NoUpdateRequiredException;
@@ -17,6 +19,7 @@ import com.epam.edai.run8.team11.model.reservation.Reservation;
 import com.epam.edai.run8.team11.model.reservation.reservationstatus.ReservationStatus;
 import com.epam.edai.run8.team11.repository.reservation.ReservationRepository;
 import com.epam.edai.run8.team11.service.location.LocationService;
+import com.epam.edai.run8.team11.service.sqs.SqsService;
 import com.epam.edai.run8.team11.service.table.TableService;
 import com.epam.edai.run8.team11.service.waiter.WaiterService;
 import com.epam.edai.run8.team11.utils.AuthenticationUtil;
@@ -39,6 +42,7 @@ public class ReservationServiceImpl implements ReservationService{
     private final TableService tableService;
     private final LocationService locationService;
     private final AuthenticationUtil authenticationUtil;
+    private final SqsService sqsService;
 
     @Override
     public Reservation findById(String reservationId) {
@@ -80,7 +84,7 @@ public class ReservationServiceImpl implements ReservationService{
         reservation.setStatus(ReservationStatus.CANCELLED);
 
         Waiter waiter = waiterService.findWaiterById(reservation.getWaiterId());
-        Table table = tableService.findFyIdAndNumber(reservation.getLocationId(),reservation.getTableNumber());
+        Table table = tableService.findByIdAndNumber(reservation.getLocationId(),reservation.getTableNumber());
 
         waiter.getSlots().get(reservation.getDate()).add(reservation.getTimeSlot().split(" - ")[0].trim());
         waiter.setCount(waiter.getCount()-1);
@@ -89,6 +93,12 @@ public class ReservationServiceImpl implements ReservationService{
         waiterService.updateWaiter(waiter);
         tableService.updateTable(table);
         reservationRepository.updateReservation(reservation);
+
+        EventPayloadDTO dto = EventPayloadDTO.builder()
+                .eventType(EventType.ORDER)
+                .reservationId(reservation.getId())
+                .build();
+        sqsService.sendMessage(dto);
 
         return "Reservation cancelled successfully";
     }
@@ -180,7 +190,7 @@ public class ReservationServiceImpl implements ReservationService{
         // Check table availability
         log.debug("Checking table availability for locationId: {}, tableNumber: {}, date: {}, timeFrom: {}",
                 locationId, tableNumber, date, timeFrom);
-        Table table = tableService.findFyIdAndNumber(locationId, tableNumber);
+        Table table = tableService.findByIdAndNumber(locationId, tableNumber);
         if (!tableService.isTableAvailable(table, date, timeFrom)) {
             log.error("Table {} at location {} is unavailable on {} at {}", tableNumber, locationId, date, timeFrom);
             throw new SlotAlreadyBookedException("Table is already booked or unavailable.");
@@ -228,7 +238,7 @@ public class ReservationServiceImpl implements ReservationService{
 
         // Free up previous slots
         log.debug("Freeing up slots for the existing reservation.");
-        Table previousTable = tableService.findFyIdAndNumber(existingReservation.getLocationId(), existingReservation.getTableNumber());
+        Table previousTable = tableService.findByIdAndNumber(existingReservation.getLocationId(), existingReservation.getTableNumber());
         Waiter previousWaiter = waiterService.findWaiterById(existingReservation.getWaiterId());
 
         // Convert to mutable lists before modifying

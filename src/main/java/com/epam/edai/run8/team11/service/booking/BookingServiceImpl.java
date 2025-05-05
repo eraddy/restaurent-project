@@ -3,6 +3,8 @@ package com.epam.edai.run8.team11.service.booking;
 import com.epam.edai.run8.team11.dto.reservatation.ReservationRequestByClient;
 import com.epam.edai.run8.team11.dto.reservatation.ReservationRequestByWaiter;
 import com.epam.edai.run8.team11.dto.reservatation.ReservationResponse;
+import com.epam.edai.run8.team11.dto.sqs.EventPayloadDTO;
+import com.epam.edai.run8.team11.dto.sqs.eventtype.EventType;
 import com.epam.edai.run8.team11.dto.user.UserDto;
 import com.epam.edai.run8.team11.exception.access.InvalidAccessException;
 import com.epam.edai.run8.team11.exception.table.SlotAlreadyBookedException;
@@ -16,8 +18,8 @@ import com.epam.edai.run8.team11.model.reservation.clienttype.ClientType;
 import com.epam.edai.run8.team11.model.reservation.reservationstatus.ReservationStatus;
 import com.epam.edai.run8.team11.service.location.LocationService;
 import com.epam.edai.run8.team11.service.reservaiton.ReservationService;
+import com.epam.edai.run8.team11.service.sqs.SqsService;
 import com.epam.edai.run8.team11.service.table.TableService;
-import com.epam.edai.run8.team11.service.user.UserService;
 import com.epam.edai.run8.team11.service.waiter.WaiterService;
 import com.epam.edai.run8.team11.utils.AuthenticationUtil;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -37,6 +39,7 @@ public class BookingServiceImpl implements BookingService {
     private final ReservationService reservationService;
     private final AuthenticationUtil authenticationUtil;
     private final TableService tableService;
+    private final SqsService sqsService;
 
     @Override
     public ReservationResponse bookingByClient(ReservationRequestByClient reservationRequestByClient) {
@@ -57,7 +60,7 @@ public class BookingServiceImpl implements BookingService {
         String timeTo = reservationRequestByClient.getTimeTo();
         Integer guestsNumber = reservationRequestByClient.getGuestsNumber();
 
-        Table table = tableService.findFyIdAndNumber(locationId,tableNumber);
+        Table table = tableService.findByIdAndNumber(locationId,tableNumber);
         Waiter waiter = waiterService.getLeastBusyWaiterAtLocation(locationId, date, timeFrom);
 
         if (!tableService.isTableAvailable(table,date, timeFrom)) {
@@ -106,6 +109,12 @@ public class BookingServiceImpl implements BookingService {
             log.error("Failed to create reservation: {}", reservation.getId());
         }
 
+        EventPayloadDTO dto = EventPayloadDTO.builder()
+                .eventType(EventType.ORDER)
+                .reservationId(reservation.getId())
+                .build();
+        sqsService.sendMessage(dto);
+
         return ReservationResponse.builder()
                 .id(reservation.getId())
                 .status(ReservationStatus.CONFIRMED)
@@ -122,6 +131,12 @@ public class BookingServiceImpl implements BookingService {
                 .guestsNumber(guestsNumber)
                 .build();
     }
+
+    @Override
+    public List<String> getAvailableSlotsForWaiter(LocalDate date) {
+        return waiterService.findAvailableSlots(date);
+    }
+
 
     @Override
     public ReservationResponse bookingByWaiter(ReservationRequestByWaiter reservationRequestByWaiter) {
@@ -146,7 +161,7 @@ public class BookingServiceImpl implements BookingService {
         }
         String waiterId = userDto.getUserId();
 
-        Table table = tableService.findFyIdAndNumber(locationId, tableNumber);
+        Table table = tableService.findByIdAndNumber(locationId, tableNumber);
         Waiter waiter = waiterService.findWaiterById(waiterId);
 
         if (!tableService.isTableAvailable(table, date, timeFrom)) {
@@ -200,6 +215,12 @@ public class BookingServiceImpl implements BookingService {
         } else {
             log.error("Failed to create reservation by waiter: {}", reservation.getId());
         }
+
+        EventPayloadDTO dto = EventPayloadDTO.builder()
+                .eventType(EventType.ORDER)
+                .reservationId(reservation.getId())
+                .build();
+        sqsService.sendMessage(dto);
 
         return ReservationResponse.builder()
                 .id(reservation.getId())

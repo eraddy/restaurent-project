@@ -2,7 +2,7 @@ package com.epam.edai.run8.team11.dto.reservatation;
 
 import com.epam.edai.run8.team11.exception.InvalidInputException;
 import com.epam.edai.run8.team11.exception.location.LocationException;
-import com.epam.edai.run8.team11.exception.table.TableException;
+import com.epam.edai.run8.team11.exception.table.TableNotFoundException;
 import com.epam.edai.run8.team11.model.reservation.Reservation;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,7 +12,6 @@ import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 
 @Data
 @AllArgsConstructor
@@ -32,7 +31,7 @@ public class UpdateReservationRequest {
             throw new LocationException("Location ID must not be null or empty.");
         }
         if (tableNumber == null || tableNumber.isBlank()) {
-            throw new TableException("Table number must not be null or empty.");
+            throw new IllegalArgumentException("Table number must not be null or empty.");
         }
         if (date == null || date.isBlank()) {
             throw new IllegalArgumentException("Date must not be null or empty.");

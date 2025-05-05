@@ -11,6 +11,6 @@ public interface TableService {
     void bookTableSlots(Table table, LocalDate date, String time);
     List<Table> findAll();
     List<Table> findById(String locationID);
-    Table findFyIdAndNumber(String locationId,Integer tableNumber);
+    Table findByIdAndNumber(String locationId, Integer tableNumber);
     void updateTable(Table table);
 }

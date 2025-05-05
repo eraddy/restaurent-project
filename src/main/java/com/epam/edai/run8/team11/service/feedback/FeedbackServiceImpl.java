@@ -3,6 +3,8 @@ package com.epam.edai.run8.team11.service.feedback;
 
 import com.epam.edai.run8.team11.dto.feedback.FeedbackUpdateDTO;
 import com.epam.edai.run8.team11.dto.feedback.NewFeedbackDTO;
+import com.epam.edai.run8.team11.dto.sqs.EventPayloadDTO;
+import com.epam.edai.run8.team11.dto.sqs.eventtype.EventType;
 import com.epam.edai.run8.team11.dto.user.UserDto;
 import com.epam.edai.run8.team11.exception.InvalidInputException;
 import com.epam.edai.run8.team11.exception.feedback.FeedbackNotFoundException;
@@ -11,6 +13,7 @@ import com.epam.edai.run8.team11.exception.user.UserNotFoundException;
 import com.epam.edai.run8.team11.exception.user.UserNotLoggedInException;
 import com.epam.edai.run8.team11.model.feedback.Feedback;
 import com.epam.edai.run8.team11.service.reservaiton.ReservationService;
+import com.epam.edai.run8.team11.service.sqs.SqsService;
 import com.epam.edai.run8.team11.service.user.UserService;
 import com.epam.edai.run8.team11.utils.AuthenticationUtil;
 import com.epam.edai.run8.team11.utils.SortPageFields;
@@ -37,6 +40,7 @@ public class FeedbackServiceImpl implements FeedbackService{
      private final ReservationService reservationService;
      private final UserService userService;
      private final AuthenticationUtil authenticationUtil;
+     private final SqsService sqsService;
 
     private void validateNewFeedbackDTO(NewFeedbackDTO dto){
         List<String> invalidInputs = new ArrayList<>();
@@ -155,11 +159,18 @@ public class FeedbackServiceImpl implements FeedbackService{
         feedbackRepository.save(serviceFeedback);
 
         String feedbackIds = cuisineFeedback.getFeedbackId() + "," +
-                                serviceFeedback.getFeedbackId();
+                serviceFeedback.getFeedbackId();
 
         reservation.setFeedbackId(feedbackIds);
         reservationService.updateReservation(reservation);
 
+        EventPayloadDTO feedbackReport = EventPayloadDTO
+                .builder()
+                .eventType(EventType.FEEDBACK)
+                .reservationId(newFeedbackDTO.getReservationId())
+                .build();
+        log.info("Sending feedback to SQS: {}", feedbackReport);
+        sqsService.sendMessage(feedbackReport);
     }
 
     public Feedback findById(String feedbackId) {

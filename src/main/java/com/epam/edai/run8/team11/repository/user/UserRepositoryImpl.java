@@ -2,6 +2,7 @@ package com.epam.edai.run8.team11.repository.user;
 
 import com.epam.edai.run8.team11.dto.RepositoryBodyDto;
 import com.epam.edai.run8.team11.dto.user.DefaultDto;
+import com.epam.edai.run8.team11.model.user.UserWaiterMapper;
 import com.epam.edai.run8.team11.model.user.Waiter;
 import com.epam.edai.run8.team11.model.user.role.Role;
 import com.epam.edai.run8.team11.model.user.User;
@@ -30,8 +31,9 @@ public class UserRepositoryImpl implements UserRepository {
     private final DynamoDbTable<DefaultDto> defaultTable;
     private static final String USER_ID_INDEX_NAME = "userId-index"; // Use your actual GSI name here
     private final PasswordEncoder passwordEncoder;
+    private final UserWaiterMapper userWaiterMapper;
 
-    public UserRepositoryImpl(DynamoDbEnhancedClient enhancedClient, PasswordEncoder passwordEncoder) {
+    public UserRepositoryImpl(DynamoDbEnhancedClient enhancedClient, PasswordEncoder passwordEncoder, UserWaiterMapper userWaiterMapper) {
         this.userTable = enhancedClient.table("users",
                 TableSchema.fromBean(User.class));
 
@@ -42,6 +44,7 @@ public class UserRepositoryImpl implements UserRepository {
                 TableSchema.fromBean(DefaultDto.class));
 
         this.passwordEncoder = passwordEncoder;
+        this.userWaiterMapper = userWaiterMapper;
     }
 
     @Override
@@ -78,12 +81,22 @@ public class UserRepositoryImpl implements UserRepository {
             log.info("Key -> {}", key.partitionKeyValue().s());
             String uuid = UUID.randomUUID().toString();
 
-            Role role = getRole(key);
+            Optional<DefaultDto> defaultDto = getDefaultTableEntry(key);
+            Role role = defaultDto.map(DefaultDto::getRole)
+                    .map(String::toUpperCase)
+                    .map(Role::valueOf).orElse(Role.CUSTOMER);
             log.info("Role -> {}", role);
 
             user.setRole(role);
             user.setUserId(uuid);
             user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+            if(role.equals(Role.WAITER)){
+                Waiter waiter = userWaiterMapper.apply(user);
+                waiter.setLocationId(defaultDto.get().getLocationId());
+                waiterTable.putItem(waiter);
+            }
+
             userTable.putItem(user);
 
             RepositoryBodyDto<Optional<User>> getUser = getByPartitionKey(user.getEmail());
@@ -130,17 +143,17 @@ public class UserRepositoryImpl implements UserRepository {
         }
     }
 
+    private Optional<DefaultDto> getDefaultTableEntry(Key key){
+        return Optional.ofNullable(defaultTable.getItem(key));
+    }
+
     private Role getRole(Key key){
         Optional<DefaultDto> item = defaultTable
                 .scan().items()
                 .stream()
                 .filter(obj -> obj.getEmail().equalsIgnoreCase(key.partitionKeyValue().s())).findFirst();
 
-        if(item.isPresent()) return Role.valueOf(item.get().getRole().toUpperCase());
+        return item.map(defaultDto -> Role.valueOf(defaultDto.getRole().toUpperCase())).orElse(Role.CUSTOMER);
 
-        Waiter item1 = waiterTable.getItem(key);
-        if(item1 != null) return Role.WAITER;
-
-        return Role.CUSTOMER;
     }
 }

@@ -11,6 +11,7 @@ public interface DishRepository {
     Dish save(Dish dish);
     Optional<Dish> findById(String dishId);
     List<Dish> findAll();
+    List<Dish> findPopularDishes();
     List<Dish> findDishesByLocationId(String locationId);
     List<Dish> findSpecialityDishesByLocationId(String locationId);
     void deleteById(String dishId);
