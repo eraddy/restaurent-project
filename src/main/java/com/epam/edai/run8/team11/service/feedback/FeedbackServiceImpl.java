@@ -162,6 +162,7 @@ public class FeedbackServiceImpl implements FeedbackService{
                 serviceFeedback.getFeedbackId();
 
         reservation.setFeedbackId(feedbackIds);
+        reservation.setStatus(ReservationStatus.FINISHED);
         reservationService.updateReservation(reservation);
 
         EventPayloadDTO feedbackReport = EventPayloadDTO
