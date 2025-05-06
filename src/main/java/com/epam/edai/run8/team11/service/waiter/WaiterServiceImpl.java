@@ -1,5 +1,8 @@
 package com.epam.edai.run8.team11.service.waiter;
 
+import com.epam.edai.run8.team11.dto.user.UserDto;
+import com.epam.edai.run8.team11.dto.user.WaiterProfileDto;
+import com.epam.edai.run8.team11.dto.user.WaiterProfileMapper;
 import com.epam.edai.run8.team11.exception.user.UserNotLoggedInException;
 import com.epam.edai.run8.team11.exception.waiter.WaiterNotFoundException;
 import com.epam.edai.run8.team11.model.user.Waiter;
@@ -24,6 +27,8 @@ public class WaiterServiceImpl implements WaiterService {
     private WaiterRepository waiterRepository;
     @Autowired
     private AuthenticationUtil authenticationUtil;
+    @Autowired
+    private WaiterProfileMapper waiterProfileMapper;
 
     @Override
     public Waiter getLeastBusyWaiterAtLocation(String locationId, LocalDate date, String startTime) {
@@ -80,6 +85,14 @@ public class WaiterServiceImpl implements WaiterService {
     public Waiter findWaiterById(String id) {
         return waiterRepository.findById(id)
                 .orElseThrow(() -> new WaiterNotFoundException(id));
+    }
+
+    @Override
+    public WaiterProfileDto findWaiterProfile() {
+        UserDto userDto = authenticationUtil.getAuthenticatedUser()
+                .orElseThrow(UserNotLoggedInException::new);
+        Waiter waiter = findWaiterByEmail(userDto.getEmail());
+        return waiterProfileMapper.apply(waiter);
     }
 
     @Override

@@ -19,6 +19,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -66,6 +67,11 @@ public class UserRepositoryImpl implements UserRepository {
             log.error("Inside getByPartitionKey Catch", e);
             return RepositoryBodyDto.error("Error retrieving user by email: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @Override
+    public List<User> findAll() {
+        return userTable.scan().items().stream().toList();
     }
 
     @Override

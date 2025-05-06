@@ -2,6 +2,8 @@ package com.epam.edai.run8.team11.service.user;
 
 import com.epam.edai.run8.team11.dto.RepositoryBodyDto;
 import com.epam.edai.run8.team11.dto.ServiceBodyDto;
+import com.epam.edai.run8.team11.dto.user.UserDetailsDto;
+import com.epam.edai.run8.team11.dto.user.UserDetailsDtoMapper;
 import com.epam.edai.run8.team11.dto.user.UserDto;
 import com.epam.edai.run8.team11.dto.user.UserDtoMapper;
 import com.epam.edai.run8.team11.model.user.User;
@@ -11,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -20,6 +23,7 @@ public class UserServiceImpl implements UserService{
 
     private final UserRepository userRepository;
     private final UserDtoMapper userDtoMapper;
+    private final UserDetailsDtoMapper userDetailsDtoMapper;
 
     @Override
     public ServiceBodyDto<Optional<UserDto>> getUserByPartitionKey(String email) {
@@ -50,6 +54,13 @@ public class UserServiceImpl implements UserService{
         }
 
         return ServiceBodyDto.error(save.getMessage());
+    }
+
+    @Override
+    public List<UserDetailsDto> findAllUserDetails() {
+        return userRepository.findAll().stream()
+                .map(userDetailsDtoMapper)
+                .toList();
     }
 
     @Override
