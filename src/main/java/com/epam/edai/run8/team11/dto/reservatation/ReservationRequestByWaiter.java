@@ -14,7 +14,7 @@ public class ReservationRequestByWaiter extends ReservationRequestByClient{
         super.validate(); // Reuse validation logic from the parent class (ReservationRequestByClient)
 
         if (customerName == null || customerName.isBlank()) {
-            throw new IllegalArgumentException("Customer name must not be null or empty.");
+            throw new IllegalArgumentException("Customer address must not be null or empty.");
         }
 
         if (customerId == null || customerId.isBlank()) {

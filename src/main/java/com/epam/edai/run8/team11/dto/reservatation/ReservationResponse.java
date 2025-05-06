@@ -17,7 +17,7 @@ public class ReservationResponse {
     private int guestsNumber;       // Number of guests for the reservation
     private ReservationStatus status;          // Confirmation status of the reservation ("Confirmed" / "Pending")
     private String waiterId;        // Assigned waiter ID
-    private String waiterName;      // Assigned waiter name
+    private String waiterName;      // Assigned waiter address
     private String locationAddress; // Address of the location
     private String customerId;
     private String customerName;

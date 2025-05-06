@@ -2,6 +2,7 @@ package com.epam.edai.run8.team11.model.dish;
 
 import com.epam.edai.run8.team11.model.dish.dishstate.DishState;
 import com.epam.edai.run8.team11.model.dish.dishstate.DishStateConverter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,6 +23,7 @@ public class Dish {
     public static final String DISH_ID = "dishId";
     public static final String LOCATION_ID = "locationId";
 
+    @JsonProperty("id")
     private String dishId;
     private String locationId;
     private String calories;

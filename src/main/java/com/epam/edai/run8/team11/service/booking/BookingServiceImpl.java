@@ -44,14 +44,14 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public ReservationResponse bookingByClient(ReservationRequestByClient reservationRequestByClient) {
         log.debug("Processing booking request: {}", reservationRequestByClient);
-
-        reservationRequestByClient.validate();
         UserDto userDto = authenticationUtil.getAuthenticatedUser()
                 .orElseThrow(UserNotLoggedInException::new);
 
         if(!userDto.getRole().equals(Role.CUSTOMER)) {
             throw new InvalidAccessException("You don't have access to perform this action");
         }
+
+        reservationRequestByClient.validate();
 
         String locationId = reservationRequestByClient.getLocationId();
         Integer tableNumber = Integer.valueOf(reservationRequestByClient.getTableNumber());

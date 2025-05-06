@@ -7,5 +7,5 @@ import lombok.Data;
 @Builder
 public class LocationSelectOptionDTO {
     private String id;
-    private String name;
+    private String address;
 }

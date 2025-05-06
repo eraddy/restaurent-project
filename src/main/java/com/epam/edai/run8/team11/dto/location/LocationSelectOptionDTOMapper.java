@@ -11,7 +11,7 @@ public class LocationSelectOptionDTOMapper implements Function<Location, Locatio
     public LocationSelectOptionDTO apply(Location location) {
         return LocationSelectOptionDTO.builder()
                 .id(location.getLocationId())
-                .name(location.getName())
+                .address(location.getName())
                 .build();
     }
 }

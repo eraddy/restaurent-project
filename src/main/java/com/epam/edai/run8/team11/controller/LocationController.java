@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -65,8 +66,8 @@ public class LocationController {
     }
 
     @GetMapping("/{id}/speciality-dishes")
-    public ResponseEntity<List<Dish>> findAllSpecialityDishesByLocationId(@PathVariable String id){
+    public ResponseEntity<Map<String,Object>> findAllSpecialityDishesByLocationId(@PathVariable String id){
         List<Dish> specialityDishes = locationService.findSpecialityDishesByLocationId(id);
-        return ResponseEntity.ok(specialityDishes);
+        return ResponseEntity.ok(Map.of("dishes",specialityDishes));
     }
 }

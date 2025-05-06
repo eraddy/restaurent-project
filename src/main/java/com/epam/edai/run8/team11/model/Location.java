@@ -1,5 +1,7 @@
 package com.epam.edai.run8.team11.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +23,7 @@ public class Location {
     public static final String LOCATION_ID = "locationId";
 
     // Partition key with UUID generation
+    @JsonProperty("id")
     private String locationId;
     private String address;
     private Integer averageOccupancy;

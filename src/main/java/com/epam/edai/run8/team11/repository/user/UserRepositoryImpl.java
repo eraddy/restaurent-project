@@ -29,7 +29,7 @@ public class UserRepositoryImpl implements UserRepository {
     private final DynamoDbTable<User> userTable;
     private final DynamoDbTable<Waiter> waiterTable;
     private final DynamoDbTable<DefaultDto> defaultTable;
-    private static final String USER_ID_INDEX_NAME = "userId-index"; // Use your actual GSI name here
+    private static final String USER_ID_INDEX_NAME = "userId-index"; // Use your actual GSI address here
     private final PasswordEncoder passwordEncoder;
     private final UserWaiterMapper userWaiterMapper;
 

@@ -55,7 +55,7 @@ public class AwsConfig {
 
         AssumeRoleRequest assumeRoleRequest = AssumeRoleRequest.builder()
                 .roleArn(roleArn)
-                .roleSessionName("assume-role-session-name")
+                .roleSessionName("assume-role-session-address")
                 .build();
 
         return StsAssumeRoleCredentialsProvider.builder()
