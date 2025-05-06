@@ -1,5 +1,6 @@
 package com.epam.edai.run8.team11.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,6 +23,7 @@ public class Table {
     private Integer tableNumber; // Sort Key
     private String locationAddress;
     private int capacity; // Max guests allowed
+    @JsonProperty("availableSlots")
     private Map<String, List<String>> slots;
 
     @DynamoDbPartitionKey

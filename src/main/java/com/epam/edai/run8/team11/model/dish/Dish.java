@@ -30,6 +30,7 @@ public class Dish {
     private String carbohydrates;
     private String description;
     private String fats;
+    @JsonProperty("previewImageUrl")
     private String imageUrl;
     private Boolean isPopular;
     private Boolean isSpeciality;
