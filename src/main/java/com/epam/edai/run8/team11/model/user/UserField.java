@@ -1,4 +1,4 @@
-package com.epam.edai.run8.team11.model;
+package com.epam.edai.run8.team11.model.user;
 
 public class UserField {
     public static final String USER_ID = "userId";

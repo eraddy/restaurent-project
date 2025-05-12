@@ -1,4 +1,4 @@
-package com.epam.edai.run8.team11.dto.user;
+package com.epam.edai.run8.team11.dto.user.profile;
 
 import com.epam.edai.run8.team11.model.user.User;
 import org.springframework.stereotype.Service;
@@ -6,10 +6,10 @@ import org.springframework.stereotype.Service;
 import java.util.function.Function;
 
 @Service
-public class UserDetailsDtoMapper implements Function<User, UserDetailsDto> {
+public class UserProfileDetailsDtoMapper implements Function<User, UserProfileDetailsDto> {
     @Override
-    public UserDetailsDto apply(User user) {
-        return UserDetailsDto.builder()
+    public UserProfileDetailsDto apply(User user) {
+        return UserProfileDetailsDto.builder()
                 .username(user.getFirstName() + " " + user.getLastName())
                 .userId(user.getUserId())
                 .email(user.getEmail())

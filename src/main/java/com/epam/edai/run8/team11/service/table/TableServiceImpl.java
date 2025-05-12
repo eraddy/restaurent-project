@@ -3,7 +3,9 @@ package com.epam.edai.run8.team11.service.table;
 import com.epam.edai.run8.team11.exception.location.LocationNotFoundException;
 import com.epam.edai.run8.team11.exception.table.SlotAlreadyBookedException;
 import com.epam.edai.run8.team11.exception.table.TableNotFoundException;
-import com.epam.edai.run8.team11.model.Table;
+import com.epam.edai.run8.team11.model.table.Table;
+import com.epam.edai.run8.team11.model.table.response.TableResponseDto;
+import com.epam.edai.run8.team11.model.table.response.TableResponseDtoMapper;
 import com.epam.edai.run8.team11.repository.table.TableRepository;
 import com.epam.edai.run8.team11.service.location.LocationService;
 import com.epam.edai.run8.team11.utils.SlotUtil;
@@ -16,7 +18,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -28,19 +29,23 @@ public class TableServiceImpl implements TableService{
     @Autowired
     private LocationService locationService;
 
+    @Autowired
+    private TableResponseDtoMapper tableResponseDtoMapper;
+
     @Override
-    public List<Table> getAvailableTables(String locationId, String date, int guestsNumber, String time) {
+    public List<TableResponseDto> getAvailableTables(String locationId, String date, int guestsNumber, String time) {
         log.debug("Fetching available tables for locationId: {}, date: {}, guestsNumber: {}, time: {}", locationId, date, guestsNumber, time);
 
-        if(LocalDate.parse(date).isBefore(LocalDate.now()))
-        {
+        if(LocalDate.parse(date).isBefore(LocalDate.now())){
             throw new IllegalArgumentException("Date can not be in past");
         }
 
-        if(guestsNumber>4 || guestsNumber<=0)
-        {
+        if(guestsNumber>4 || guestsNumber<=0) {
             throw new IllegalArgumentException("Guests number must be in a range of [1-4]");
         }
+
+        if(!time.matches("^\\d{2}:\\d{2}$"))
+           throw new IllegalArgumentException("Invalid Input time");
 
         List<Table> tables = tableRepository.findById(locationId);
         if (tables.isEmpty()) {
@@ -50,30 +55,18 @@ public class TableServiceImpl implements TableService{
 
         log.info("Total tables found for locationId {}: {}", locationId, tables.size());
 
-        List<Table> availableTables = tables.stream()
+        List<TableResponseDto> availableTables = tables.stream()
                 .peek(table -> {
-                    // Ensure the slots map has the date key initialized with default slots if not already populated
-                    Map<String, List<String>> slots = table.getSlots();
-                    slots.putIfAbsent(date, SlotUtil.getDefaultSlots());
-                    log.debug("Table slots on date {}: {}", date, slots.get(date));
+                    // Create a new instance of Table with slots containing only the relevant date
+                    Map<String, List<String>> filteredSlots = Map.of(date, table.getSlots().getOrDefault(date, SlotUtil.getDefaultSlots()));
+                    table.setSlots(filteredSlots);
                 })
                 .filter(table -> {
                     // Only include tables with the required time slot available
                     List<String> slotsForDate = table.getSlots().get(date);
                     return slotsForDate != null && slotsForDate.contains(time);
                 })
-                .map(table -> {
-                    // Create a new instance of Table with slots containing only the relevant date
-                    Map<String, List<String>> filteredSlots = Map.of(date, table.getSlots().get(date));
-                    return Table.builder()
-                            .locationId(table.getLocationId())
-                            .tableNumber(table.getTableNumber())
-                            .locationAddress(table.getLocationAddress())
-                            .capacity(table.getCapacity())
-                            .slots(filteredSlots) // Only the requested date's slots
-                            .build();
-                })
-                .toList();
+                .map(tableResponseDtoMapper).toList();
 
         if (availableTables.isEmpty()) {
             log.error("No tables available for time: {} on date: {}", time, date);

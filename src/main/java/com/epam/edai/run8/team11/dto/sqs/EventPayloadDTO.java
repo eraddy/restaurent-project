@@ -15,11 +15,7 @@ import java.util.Objects;
 public class EventPayloadDTO {
     private EventType eventType;
     private LocalDate date;
-    private String feedbackType;
-    private String feedbackId;
-    private String locationId;
     private String reservationId;
     private String waiterId;
     private Integer workingHours;
-
 }

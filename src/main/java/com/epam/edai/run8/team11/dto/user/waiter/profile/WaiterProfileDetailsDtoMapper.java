@@ -1,4 +1,4 @@
-package com.epam.edai.run8.team11.dto.user;
+package com.epam.edai.run8.team11.dto.user.waiter.profile;
 
 import com.epam.edai.run8.team11.model.user.Waiter;
 import org.springframework.stereotype.Service;
@@ -6,10 +6,10 @@ import org.springframework.stereotype.Service;
 import java.util.function.Function;
 
 @Service
-public class WaiterProfileMapper implements Function<Waiter, WaiterProfileDto> {
+public class WaiterProfileDetailsDtoMapper implements Function<Waiter, WaiterProfileDetailsDto> {
     @Override
-    public WaiterProfileDto apply(Waiter waiter) {
-        return WaiterProfileDto.builder()
+    public WaiterProfileDetailsDto apply(Waiter waiter) {
+        return WaiterProfileDetailsDto.builder()
                 .firstName(waiter.getFirstName())
                 .lastName(waiter.getLastName())
                 .locationId(waiter.getLocationId())

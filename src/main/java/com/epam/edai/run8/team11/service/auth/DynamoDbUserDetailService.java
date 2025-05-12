@@ -1,6 +1,5 @@
 package com.epam.edai.run8.team11.service.auth;
 
-import com.epam.edai.run8.team11.dto.RepositoryBodyDto;
 import com.epam.edai.run8.team11.model.user.User;
 import com.epam.edai.run8.team11.repository.user.UserRepository;
 import lombok.AllArgsConstructor;
@@ -21,12 +20,12 @@ public class DynamoDbUserDetailService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        RepositoryBodyDto<Optional<User>> userResult = userRepository.getByPartitionKey(username);
-        if(!userResult.isSuccess() && !userResult.getData().isPresent()){
-            throw new UsernameNotFoundException(userResult.getMessage());
+        Optional<User> userResult = userRepository.findById(username);
+        if(userResult.isEmpty()){
+            throw new UsernameNotFoundException("User not found with username: " + username);
         }
 
-        User user = userResult.getData().get();
+        User user = userResult.get();
         return new DynamoDbUserPrincipal() {
             @Override
             public String getEmail() {

@@ -1,6 +1,6 @@
 package com.epam.edai.run8.team11.repository.table;
 
-import com.epam.edai.run8.team11.model.Table;
+import com.epam.edai.run8.team11.model.table.Table;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;

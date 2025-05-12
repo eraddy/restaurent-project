@@ -2,6 +2,7 @@ package com.epam.edai.run8.team11.model.feedback;
 
 import com.epam.edai.run8.team11.model.feedback.feedbacktype.FeedbackType;
 import com.epam.edai.run8.team11.model.feedback.feedbacktype.FeedbackTypeConverter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,7 +28,9 @@ public class Feedback {
     private String feedbackId;
     private LocalDate date;
     private String locationId;
+    @JsonProperty("rate")
     private Double rating;
+    @JsonProperty("comment")
     private String review;
     private FeedbackType type;
     private String userAvatarUrl;

@@ -1,5 +1,6 @@
-package com.epam.edai.run8.team11.dto.user;
+package com.epam.edai.run8.team11.dto.user.waiter;
 
+import com.epam.edai.run8.team11.dto.user.UserDto;
 import com.epam.edai.run8.team11.model.user.Waiter;
 import org.springframework.stereotype.Service;
 
