@@ -25,7 +25,7 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllUsers(){
-        return ResponseEntity.ok(Map.of("üsers", userService.findAllUserDetails())) ;
+        return ResponseEntity.ok(Map.of("users", userService.findAllUserDetails()));
     }
 
     @GetMapping("/profile")
