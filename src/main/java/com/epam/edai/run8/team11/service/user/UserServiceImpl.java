@@ -124,7 +124,7 @@ public class UserServiceImpl implements UserService{
                 return ServiceBodyDto.error("Old Password is Incorrect", HttpStatus.BAD_REQUEST);
             }
 
-            user.setPassword(newPassword);
+            user.setPassword(passwordEncoder.encode(newPassword));
             userRepository.updateUser(user);
             return ServiceBodyDto.success("Password has been successfully updated");
         }
