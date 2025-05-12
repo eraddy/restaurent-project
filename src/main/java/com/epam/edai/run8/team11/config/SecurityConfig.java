@@ -37,8 +37,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
         requests ->
                     requests
-                            .requestMatchers("/v1/auth/**", "/v1/locations/**", "/v1/bookings/tables/**", "/v1/feedbacks/visitor", "/v1/dishes/**", "/v1/users/**").permitAll()
-                                    .anyRequest().authenticated()
+                            .requestMatchers(
+                                    "/v1/auth/**", "/v1/locations/**",
+                                    "/v1/bookings/tables/**", "/v1/feedbacks/visitor",
+                                    "/v1/dishes/**", "/v1/users/**"
+                            ).permitAll()
+                            .anyRequest().authenticated()
                 ).addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

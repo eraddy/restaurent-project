@@ -2,15 +2,14 @@ package com.epam.edai.run8.team11.utils;
 
 import com.epam.edai.run8.team11.dto.ServiceBodyDto;
 import com.epam.edai.run8.team11.dto.user.UserDto;
-import com.epam.edai.run8.team11.dto.user.WaiterUserDtoMapper;
+import com.epam.edai.run8.team11.dto.user.waiter.WaiterUserDtoMapper;
 import com.epam.edai.run8.team11.model.user.Waiter;
 import com.epam.edai.run8.team11.repository.waiter.WaiterRepository;
 import com.epam.edai.run8.team11.service.auth.DynamoDbUserPrincipal;
 import com.epam.edai.run8.team11.service.user.UserService;
-import com.epam.edai.run8.team11.service.waiter.WaiterService;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -22,6 +21,7 @@ import java.util.Optional;
 public class AuthenticationUtil {
 
     @Autowired
+    @Lazy
     private UserService userService;
     @Autowired
     private WaiterRepository waiterRepository;

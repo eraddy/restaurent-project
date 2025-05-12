@@ -11,7 +11,7 @@ import com.epam.edai.run8.team11.exception.table.SlotAlreadyBookedException;
 import com.epam.edai.run8.team11.exception.user.UserNotLoggedInException;
 import com.epam.edai.run8.team11.exception.waiter.WaiterNotFoundException;
 import com.epam.edai.run8.team11.model.user.role.Role;
-import com.epam.edai.run8.team11.model.Table;
+import com.epam.edai.run8.team11.model.table.Table;
 import com.epam.edai.run8.team11.model.user.Waiter;
 import com.epam.edai.run8.team11.model.reservation.Reservation;
 import com.epam.edai.run8.team11.model.reservation.clienttype.ClientType;

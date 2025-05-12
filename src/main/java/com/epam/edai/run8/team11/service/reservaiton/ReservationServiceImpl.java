@@ -6,14 +6,16 @@ import com.epam.edai.run8.team11.dto.sqs.EventPayloadDTO;
 import com.epam.edai.run8.team11.dto.sqs.eventtype.EventType;
 import com.epam.edai.run8.team11.dto.user.UserDto;
 import com.epam.edai.run8.team11.exception.access.InvalidAccessException;
+import com.epam.edai.run8.team11.exception.location.LocationNotFoundException;
 import com.epam.edai.run8.team11.exception.reservation.NoUpdateRequiredException;
 import com.epam.edai.run8.team11.exception.reservation.ReservationAlreadyCancelledException;
 import com.epam.edai.run8.team11.exception.reservation.ReservationNotFoundException;
 import com.epam.edai.run8.team11.exception.table.SlotAlreadyBookedException;
+import com.epam.edai.run8.team11.exception.table.TableNotFoundException;
 import com.epam.edai.run8.team11.exception.user.UserNotLoggedInException;
 import com.epam.edai.run8.team11.exception.waiter.WaiterNotFoundException;
 import com.epam.edai.run8.team11.model.user.role.Role;
-import com.epam.edai.run8.team11.model.Table;
+import com.epam.edai.run8.team11.model.table.Table;
 import com.epam.edai.run8.team11.model.user.Waiter;
 import com.epam.edai.run8.team11.model.reservation.Reservation;
 import com.epam.edai.run8.team11.model.reservation.reservationstatus.ReservationStatus;
@@ -23,12 +25,15 @@ import com.epam.edai.run8.team11.service.sqs.SqsService;
 import com.epam.edai.run8.team11.service.table.TableService;
 import com.epam.edai.run8.team11.service.waiter.WaiterService;
 import com.epam.edai.run8.team11.utils.AuthenticationUtil;
+import com.epam.edai.run8.team11.utils.SlotUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.sql.Time;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -81,10 +86,15 @@ public class ReservationServiceImpl implements ReservationService{
                 .orElseThrow(UserNotLoggedInException::new);
 
         Reservation reservation = findById(reservationId);
+        log.info("Reservation found {}",reservation);
+        if(reservation.getStatus().equals(ReservationStatus.CANCELLED))
+            throw new ReservationAlreadyCancelledException(reservationId);
         reservation.setStatus(ReservationStatus.CANCELLED);
 
         Waiter waiter = waiterService.findWaiterById(reservation.getWaiterId());
+        log.info("Waiter found {}",waiter);
         Table table = tableService.findByIdAndNumber(reservation.getLocationId(),reservation.getTableNumber());
+        log.info("Table found {}",table);
 
         waiter.getSlots().get(reservation.getDate()).add(reservation.getTimeSlot().split(" - ")[0].trim());
         waiter.setCount(waiter.getCount()-1);
@@ -113,19 +123,36 @@ public class ReservationServiceImpl implements ReservationService{
 
     @Override
     public ReservationResponse updateReservation(String reservationId, UpdateReservationRequest updateReservationRequest) {
-        log.info("Updating reservation with ID: {}", reservationId);
-
-        // Fetch the existing reservation
-        log.debug("Fetching existing reservation with ID: {}", reservationId);
-        Reservation existingReservation = findById(reservationId);
-
-
-        // Validate the update request
-        updateReservationRequest.populateWithDefaultValues(existingReservation);
-        updateReservationRequest.validate();
 
         UserDto userDto = authenticationUtil.getAuthenticatedUser()
-                .orElseThrow(UserNotLoggedInException::new);
+                .orElseThrow(() -> {
+                    log.error("A user tried to update a reservation but is not logged in.");
+                    return new UserNotLoggedInException();
+                });
+
+        log.info("Attempting to update reservation with ID: {}", reservationId);
+
+        // Fetch the existing reservation
+        log.debug("Fetching details for reservation ID: {}", reservationId);
+        Reservation existingReservation = findById(reservationId);
+
+        if (existingReservation == null) {
+            log.error("Reservation with ID: {} not found.", reservationId);
+            throw new ReservationNotFoundException("Reservation not found.");
+        }
+
+        log.info("Fetched reservation: {}", existingReservation);
+
+        // Check if the reservation is already cancelled
+        if (ReservationStatus.CANCELLED.equals(existingReservation.getStatus())) {
+            log.error("Failed to update reservation ID: {} as it is already cancelled.", reservationId);
+            throw new ReservationAlreadyCancelledException("Cannot update a cancelled reservation.");
+        }
+
+        // Populating and validating the update request
+        log.debug("Populating default values and validating the update request.");
+        updateReservationRequest.populateWithDefaultValues(existingReservation);
+        updateReservationRequest.validate();
 
         // Extract details from the request
         String locationId = updateReservationRequest.getLocationId();
@@ -135,31 +162,21 @@ public class ReservationServiceImpl implements ReservationService{
         String timeTo = updateReservationRequest.getTimeTo();
         Integer guestsNumber = updateReservationRequest.getGuestsNumber();
 
+        log.debug("Update request details - Location ID: {}, Table Number: {}, Date: {}, Time From: {}, Time To: {}, Guests Number: {}",
+                locationId, tableNumber, date, timeFrom, timeTo, guestsNumber);
+
         String updatingUserId = userDto.getUserId();
         String role = userDto.getRole().toString();
 
-        // Check if the reservation is already cancelled
-        if (ReservationStatus.CANCELLED.equals(existingReservation.getStatus())) {
-            log.error("Cannot update a cancelled reservation with ID: {}", reservationId);
-            throw new ReservationAlreadyCancelledException("Cannot update a cancelled reservation.");
-        }
-
-        // Preserve old data if not provided
-        locationId = locationId != null ? locationId : existingReservation.getLocationId();
-        tableNumber = tableNumber != null ? tableNumber : existingReservation.getTableNumber();
-        date = date != null ? date : LocalDate.parse(existingReservation.getDate());
-        timeFrom = timeFrom != null ? timeFrom : existingReservation.getTimeSlot().split(" - ")[0].trim();
-        timeTo = timeTo != null ? timeTo : existingReservation.getTimeSlot().split(" - ")[1].trim();
-        guestsNumber = guestsNumber != null ? guestsNumber : Integer.valueOf(existingReservation.getGuestsNumber());
-
+        // Check if update is necessary
         if (locationId.equals(existingReservation.getLocationId()) &&
                 tableNumber.equals(existingReservation.getTableNumber()) &&
                 date.toString().equals(existingReservation.getDate()) &&
                 timeFrom.equals(existingReservation.getTimeSlot().split(" - ")[0].trim()) &&
                 timeTo.equals(existingReservation.getTimeSlot().split(" - ")[1].trim()) &&
-                guestsNumber.equals(Integer.valueOf(existingReservation.getGuestsNumber())))
-        {
-            throw new NoUpdateRequiredException("Details provide match the existing reservation");
+                guestsNumber.equals(Integer.valueOf(existingReservation.getGuestsNumber()))) {
+            log.warn("No update required: Provided details match the existing reservation.");
+            throw new NoUpdateRequiredException("Details provided match the existing reservation.");
         }
 
         boolean isTableChanged = !tableNumber.equals(existingReservation.getTableNumber()) || !locationId.equals(existingReservation.getLocationId());
@@ -167,10 +184,12 @@ public class ReservationServiceImpl implements ReservationService{
                 || !timeTo.equals(existingReservation.getTimeSlot().split(" - ")[1].trim())
                 || !date.toString().equals(existingReservation.getDate());
 
-        if (!isTableChanged || !isTimeSlotChanged)
-        {
+        // Handle guests number update without changing table or time slot
+        if (!isTableChanged && !isTimeSlotChanged) {
+            log.info("Guests number update detected. Performing partial update.");
             existingReservation.setGuestsNumber(guestsNumber.toString());
             reservationRepository.updateReservation(existingReservation);
+
             return ReservationResponse.builder()
                     .id(existingReservation.getId())
                     .status(ReservationStatus.CONFIRMED)
@@ -187,65 +206,67 @@ public class ReservationServiceImpl implements ReservationService{
                     .build();
         }
 
-        // Check table availability
-        log.debug("Checking table availability for locationId: {}, tableNumber: {}, date: {}, timeFrom: {}",
-                locationId, tableNumber, date, timeFrom);
+        Table table1 = tableService.findByIdAndNumber(existingReservation.getLocationId(),existingReservation.getTableNumber());
+        table1.getSlots().get(existingReservation.getDate()).add(existingReservation.getTimeSlot().split(" - ")[0].trim());
+        tableService.updateTable(table1);
+
+        // Validate table availability
+        log.debug("Checking availability for table number: {} at location ID: {} for date: {} and time: {}",
+                tableNumber, locationId, date, timeFrom);
+
         Table table = tableService.findByIdAndNumber(locationId, tableNumber);
+
+        if (table == null) {
+            log.error("Table number: {} not found at location ID: {}", tableNumber, locationId);
+            throw new TableNotFoundException(tableNumber);
+        }
+
         if (!tableService.isTableAvailable(table, date, timeFrom)) {
-            log.error("Table {} at location {} is unavailable on {} at {}", tableNumber, locationId, date, timeFrom);
+            log.error("Table number: {} at location ID: {} is unavailable on date: {} at time: {}", tableNumber, locationId, date, timeFrom);
             throw new SlotAlreadyBookedException("Table is already booked or unavailable.");
         }
 
-        // Check guests capacity
+        // Validate guests capacity
         if (guestsNumber > table.getCapacity()) {
-            log.error("Guests number {} exceeds table capacity {}", guestsNumber, table.getCapacity());
+            log.error("Guests number: {} exceeds capacity of table number: {} which can handle up to {} guests.", guestsNumber, tableNumber, table.getCapacity());
             throw new IllegalArgumentException("The requested guests number exceeds the table capacity.");
         }
 
-        // Check and assign the waiter (if the updating user is a waiter)
+        // Assign Waiter based on role (if updating user is a waiter)
         Waiter newWaiter = null;
         if ("waiter".equals(role)) {
-            log.info("Request made by waiter ID: {}. Checking assignment eligibility...", updatingUserId);
+            log.info("Update request made by waiter ID: {}. Checking eligibility...", updatingUserId);
 
             Waiter updatingWaiter = waiterService.findWaiterById(updatingUserId);
             if (!updatingWaiter.getLocationId().equals(locationId)) {
-                log.error("Unauthorized update attempt: Waiter from locationId {} cannot update reservation at locationId {}.",
-                        updatingWaiter.getLocationId(), locationId);
+                log.error("Waiter ID: {} is not authorized to update reservations at location ID: {}.", updatingUserId, locationId);
                 throw new InvalidAccessException("Waiter can only update reservations from their assigned location.");
             }
 
-            List<String> waiterSlotsForDate = new ArrayList<>(updatingWaiter.getSlots().getOrDefault(date.toString(), new ArrayList<>()));
+            List<String> waiterSlotsForDate = updatingWaiter.getSlots().getOrDefault(date.toString(), new ArrayList<>());
             if (waiterSlotsForDate.contains(timeFrom)) {
-                log.info("The updating waiter is assigning themselves to the reservation.");
+                log.info("Assigning waiter ID: {} to the reservation.", updatingUserId);
                 newWaiter = updatingWaiter;
             } else {
-                log.error("Waiter ID: {} is not available for the requested time slot on {}", updatingUserId, date);
+                log.error("Waiter ID: {} is not available for the requested time slot on date: {}.", updatingUserId, date);
                 throw new SlotAlreadyBookedException("You are not available for the requested time slot.");
             }
         }
 
-        // Handle case for assigning the least busy waiter (if customer makes the request or if reassign is required)
         if (newWaiter == null) {
-            log.debug("Finding an available waiter at locationId: {} for date: {} and timeFrom: {}", locationId, date, timeFrom);
+            log.debug("Finding least busy waiter for location ID: {} on date: {} and time: {}", locationId, date, timeFrom);
             newWaiter = waiterService.getLeastBusyWaiterAtLocation(locationId, date, timeFrom);
             if (newWaiter == null) {
-                log.error("No waiter available for locationId: {}", locationId);
+                log.error("No eligible waiter found for location ID: {} on date: {} at time: {}.", locationId, date, timeFrom);
                 throw new WaiterNotFoundException("No available waiter found for the given time slot.");
             }
         }
 
-        log.info("Assigned waiter: {} (ID: {}) successfully.", newWaiter.getFirstName(), newWaiter.getUserId());
+        log.info("Successfully assigned waiter: {} (ID: {}) to the reservation.", newWaiter.getFirstName(), newWaiter.getUserId());
 
-        // Free up previous slots
-        log.debug("Freeing up slots for the existing reservation.");
-        Table previousTable = tableService.findByIdAndNumber(existingReservation.getLocationId(), existingReservation.getTableNumber());
+        // Freeing previous resources and updating with new resources
+        log.debug("Freeing up slots for previous table and waiter.");
         Waiter previousWaiter = waiterService.findWaiterById(existingReservation.getWaiterId());
-
-        // Convert to mutable lists before modifying
-        List<String> previousTableSlots = new ArrayList<>(previousTable.getSlots().get(existingReservation.getDate()));
-        previousTableSlots.add(existingReservation.getTimeSlot().split(" - ")[0].trim());
-        previousTable.getSlots().put(existingReservation.getDate(), previousTableSlots);
-        tableService.updateTable(previousTable);
 
         if (previousWaiter != null) {
             List<String> previousWaiterSlots = new ArrayList<>(previousWaiter.getSlots().get(existingReservation.getDate()));
@@ -255,19 +276,19 @@ public class ReservationServiceImpl implements ReservationService{
             waiterService.updateWaiter(previousWaiter);
         }
 
-        // Update slots for the new table and waiter
-        List<String> newTableSlots = new ArrayList<>(table.getSlots().get(date.toString()));
+        log.debug("Updating slots for new table and waiter.");
+        List<String> newTableSlots = new ArrayList<>(table.getSlots().getOrDefault(date.toString(), SlotUtil.getDefaultSlots()));
         newTableSlots.remove(timeFrom);
         table.getSlots().put(date.toString(), newTableSlots);
         tableService.updateTable(table);
 
-        List<String> newWaiterSlots = new ArrayList<>(newWaiter.getSlots().get(date.toString()));
+        List<String> newWaiterSlots = new ArrayList<>(newWaiter.getSlots().getOrDefault(date.toString(),SlotUtil.getDefaultSlots()));
         newWaiterSlots.remove(timeFrom);
         newWaiter.getSlots().put(date.toString(), newWaiterSlots);
         newWaiter.setCount(newWaiter.getCount() + 1);
         waiterService.updateWaiter(newWaiter);
 
-        // Update the reservation
+        // Update reservation details
         existingReservation.setLocationId(locationId);
         existingReservation.setTableNumber(tableNumber);
         existingReservation.setDate(date.toString());
@@ -277,10 +298,12 @@ public class ReservationServiceImpl implements ReservationService{
         existingReservation.setWaiterName(newWaiter.getFirstName());
         existingReservation.setStatus(ReservationStatus.CONFIRMED);
 
-        log.debug("Updating reservation: {}", existingReservation);
+        log.debug("Finalizing update for reservation ID: {}.", reservationId);
         reservationRepository.updateReservation(existingReservation);
 
-        // Return the response
+        log.info("Reservation ID: {} successfully updated.", reservationId);
+
+        // Return updated reservation response
         return ReservationResponse.builder()
                 .id(existingReservation.getId())
                 .status(ReservationStatus.CONFIRMED)

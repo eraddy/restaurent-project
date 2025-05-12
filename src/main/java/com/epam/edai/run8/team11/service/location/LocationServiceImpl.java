@@ -67,6 +67,9 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public Page<LocationFeedbackDTO> findLocationFeedbacksByLocationIdWithPagination(String locationId, FeedbackType type, String sort, Integer size, Integer page) {
+        if(locationId == null || locationId.isEmpty())
+            throw new InvalidInputException(Location.LOCATION_ID, locationId);
+        locationRepository.findById(locationId).orElseThrow(() -> new LocationNotFoundException(locationId));
         Page<Feedback> feedbackPage = feedbackService.findByLocationIdWithPagination(locationId, type, sort, size, page);
         return feedbackPage.map(locationFeedbackDTOMapper);
     }
@@ -75,6 +78,7 @@ public class LocationServiceImpl implements LocationService {
     public List<Dish> findSpecialityDishesByLocationId(String locationId) {
         if(locationId == null || locationId.isEmpty())
             throw new InvalidInputException(Location.LOCATION_ID, locationId);
+        locationRepository.findById(locationId).orElseThrow(() -> new LocationNotFoundException(locationId));
         return dishService.findSpecialityDishesByLocationId(locationId);
     }
 

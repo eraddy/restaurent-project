@@ -7,13 +7,13 @@ import org.springframework.stereotype.Component;
 import java.util.function.Function;
 
 @Component
-public class SignUpToUserMapper implements Function<SignUpDto, User> {
+public class SignUpDtoUserMapper implements Function<SignUpDto, User> {
     @Override
     public User apply(SignUpDto signUpDto) {
         return User.builder()
                 .lastName(signUpDto.getLastName())
                 .firstName(signUpDto.getFirstName())
-                .email(signUpDto.getEmail())
+                .email(signUpDto.getEmail().toLowerCase())
                 .password(signUpDto.getPassword())
                 .build();
     }

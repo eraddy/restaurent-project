@@ -14,15 +14,17 @@ import com.epam.edai.run8.team11.exception.table.SlotAlreadyBookedException;
 import com.epam.edai.run8.team11.exception.table.TableNotFoundException;
 import com.epam.edai.run8.team11.exception.user.UserAlreadyExistsException;
 import com.epam.edai.run8.team11.exception.user.UserNotFoundException;
-import com.epam.edai.run8.team11.exception.user.UserNotLogedInException;
+import com.epam.edai.run8.team11.exception.user.UserNotLoggedInException;
 import com.epam.edai.run8.team11.exception.waiter.WaiterAlreadyExistsException;
 import com.epam.edai.run8.team11.exception.waiter.WaiterNotFoundException;
 import com.epam.edai.run8.team11.utils.ResponseUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import software.amazon.awssdk.services.s3.endpoints.internal.Value;
 import software.amazon.awssdk.services.sts.model.StsException;
 
 import java.time.DateTimeException;
@@ -44,6 +46,17 @@ public class GlobalExceptionHandler {
         return responseUtil.buildNotFound(e.getMessage());
     }
 
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException e) {
+        return responseUtil.buildUnauthorized(e.getMessage());
+    }
+
+    @ExceptionHandler(NumberFormatException.class)
+    public ResponseEntity<Map<String,Object>> handleBadRequest(NumberFormatException e)
+    {
+        return responseUtil.buildBadRequestResponse("Invalid input");
+    }
+
     @ExceptionHandler({
             UserAlreadyExistsException.class, WaiterAlreadyExistsException.class,
             SlotAlreadyBookedException.class, NoUpdateRequiredException.class})
@@ -55,14 +68,13 @@ public class GlobalExceptionHandler {
             IllegalArgumentException.class, InvalidInputException.class,
             InvalidEventTypeException.class, InvalidReservationStateException.class,
             InvalidLocationIdException.class, ReservationAlreadyCancelledException.class,
-            DateTimeException.class
     })
     public ResponseEntity<Map<String, Object>> handleBadRequestException(RuntimeException e) {
         return responseUtil.buildBadRequestResponse(e.getMessage());
     }
 
     @ExceptionHandler({
-            UserNotLogedInException.class, InvalidAccessException.class
+            UserNotLoggedInException.class, InvalidAccessException.class
     })
     public ResponseEntity<Map<String, Object>> handleUserNotLoggedException(RuntimeException e) {
         return responseUtil.buildUnauthorized(e.getMessage());
@@ -76,5 +88,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<Map<String, Object>> handleMissingParam(MissingServletRequestParameterException e) {
         return responseUtil.buildBadRequestResponse(e.getParameterName()+" can't be empty");
+    }
+
+    @ExceptionHandler(DateTimeException.class)
+    public ResponseEntity<Map<String,Object>> handleDateTimeException(DateTimeException e)
+    {
+        return responseUtil.buildBadRequestResponse("Invalid input for date or time");
     }
 }

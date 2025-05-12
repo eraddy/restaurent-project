@@ -2,6 +2,8 @@ package com.epam.edai.run8.team11.utils;
 
 import com.epam.edai.run8.team11.dto.SignInDto;
 import com.epam.edai.run8.team11.dto.SignUpDto;
+import com.epam.edai.run8.team11.dto.user.UpdatePasswordDto;
+import com.epam.edai.run8.team11.dto.user.UpdateDto;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.ArrayList;
@@ -53,8 +55,36 @@ public class ValidateUtil {
             invalidInputs.add("email");
         }
 
-        if(user.getPassword() == null || user.getPassword().isEmpty() || !user.getPassword().matches(PASSWORD)){
+        if(user.getPassword() == null || user.getPassword().isEmpty()){
             invalidInputs.add("password");
+        }
+
+        return invalidInputs;
+    }
+
+    public List<String> validateUserUpdateRequest(UpdateDto updateDto){
+        List<String> invalidInputs = new ArrayList<>();
+
+        if(updateDto.getFirstName() == null || updateDto.getFirstName().isEmpty() || !updateDto.getFirstName().matches(FIRST_NAME)){
+            invalidInputs.add("firstName");
+        }
+
+        if(updateDto.getLastName() == null || updateDto.getLastName().isEmpty() || !updateDto.getLastName().matches(LAST_NAME)){
+            invalidInputs.add("lastName");
+        }
+
+        return invalidInputs;
+    }
+
+    public List<String> validateUserPasswordUpdateRequest(UpdatePasswordDto updatePasswordDto){
+        List<String> invalidInputs = new ArrayList<>();
+
+        if(updatePasswordDto.getOldPassword() == null || updatePasswordDto.getOldPassword().isEmpty()){
+            invalidInputs.add("oldPassword");
+        }
+
+        if(updatePasswordDto.getNewPassword() == null || updatePasswordDto.getNewPassword().isEmpty() || !updatePasswordDto.getNewPassword().matches(PASSWORD)){
+            invalidInputs.add("newPassword");
         }
 
         return invalidInputs;

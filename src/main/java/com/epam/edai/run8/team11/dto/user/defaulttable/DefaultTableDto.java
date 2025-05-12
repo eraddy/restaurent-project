@@ -1,4 +1,4 @@
-package com.epam.edai.run8.team11.dto.user;
+package com.epam.edai.run8.team11.dto.user.defaulttable;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,7 +10,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 @AllArgsConstructor
 @NoArgsConstructor
 @DynamoDbBean
-public class DefaultDto {
+public class DefaultTableDto {
     private String email;
     private String locationId;
     private String role;
