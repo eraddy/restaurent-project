@@ -1,6 +1,7 @@
 package com.epam.edai.run8.team11.repository.reservation;
 
 import com.epam.edai.run8.team11.model.reservation.Reservation;
+import com.epam.edai.run8.team11.model.reservation.reservationstatus.ReservationStatus;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
@@ -8,6 +9,7 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -28,7 +30,12 @@ public class ReservationRepositoryImpl implements ReservationRepository{
 
     @Override
     public List<Reservation> reservationsForWaiter(String id) {
-        return reservationTable.scan().items().stream().filter(reservation -> id.equalsIgnoreCase(reservation.getWaiterId())).collect(Collectors.toList());
+        return reservationTable.scan()
+                .items().stream()
+                .filter(reservation -> id.equalsIgnoreCase(reservation.getWaiterId()))
+                .filter(reservation -> !reservation.getStatus().equals(ReservationStatus.FINISHED))
+                .filter(reservation -> LocalDate.parse(reservation.getDate()).compareTo(LocalDate.now()) >= 0)
+                .collect(Collectors.toList());
     }
 
     @Override

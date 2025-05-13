@@ -32,7 +32,12 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> getUserProfile(){
         ServiceBodyDto<UserDto> userProfileDetails = userService.getUserProfileDetails();
         if(userProfileDetails.isSuccess()){
-            return responseUtil.buildOkResponse(Map.of("user", userProfileDetails.getData()));
+            UserDto data = userProfileDetails.getData();
+            return responseUtil.buildOkResponse(Map.of(
+                    "firstName", data.getFirstName(),
+                    "lastName", data.getLastName(),
+                    "imageUrl" , "https://team11-deployment-bucket.s3.eu-west-2.amazonaws.com/images/default_profile_picture.png"
+            ));
         } else {
             return responseUtil.buildUnauthorized(userProfileDetails.getMessage());
         }

@@ -24,7 +24,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import software.amazon.awssdk.services.s3.endpoints.internal.Value;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import software.amazon.awssdk.services.sts.model.StsException;
 
 import java.time.DateTimeException;
@@ -35,6 +35,11 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     private final ResponseUtil responseUtil;
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleResourceNotFound(NoResourceFoundException e) {
+        return responseUtil.buildNotFound(e.getMessage());
+    }
 
     @ExceptionHandler({
             FeedbackNotFoundException.class, UserNotFoundException.class,
