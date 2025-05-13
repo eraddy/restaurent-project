@@ -26,7 +26,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
 
     public ServiceBodyDto<String> loginUser(SignInDto signInDto){
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(signInDto.getEmail(), signInDto.getPassword()));
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(signInDto.getEmail().toLowerCase(), signInDto.getPassword()));
 
         if(authentication.isAuthenticated()) {
             ServiceBodyDto<Optional<UserDto>> userByPartitionKey = userService.getUserByPartitionKey(signInDto.getEmail());
